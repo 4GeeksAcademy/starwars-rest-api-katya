@@ -47,7 +47,6 @@ def get_users():
 # FAVORITES ENDPOINTS
 @app.route('/users/<int:user_id>/favorites', methods=['GET'])
 def get_favorites(user_id):
-    
     favorites = Favorites.query.filter_by(user_id=user_id).all()
     serialized_favorites = [favorite.serialize() for favorite in favorites]
 
@@ -118,6 +117,27 @@ def get_character(character_id):
     if character is None:
         return jsonify(), 404
     return jsonify(character.serialize()), 200
+
+@app.route('/characters', methods=['POST'])
+def add_character():
+    body = request.get_json()
+    character = Character()
+    character.id = body['id']
+    character.name = body['name']
+    character.gender = body['gender']
+    character.birth_year = body['birth_year']
+    character.height = body['height']
+    character.hair_color = body['hair_color']
+    character.eye_color = body['eye_color']
+    character.planet_id = body['planet_id']
+
+    if 'image_url' in body:
+        character.image_url = body['image_url']
+
+    db.session.add(character)
+    db.session.commit()
+
+    return jsonify("Character created successfully", character.serialize()), 200
 
 # PLANETS ENDPOINTS
 @app.route('/planets', methods=['GET'])
