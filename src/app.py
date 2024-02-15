@@ -36,6 +36,74 @@ def handle_invalid_usage(error):
 def sitemap():
     return generate_sitemap(app)
 
+# USERS ENDPOINTS
+@app.route('/users', methods=['GET'])
+def get_users():
+    users = User.query.all()
+    serialized_users = [user.serialize() for user in users]
+
+    return jsonify(serialized_users), 200
+
+# FAVORITES ENDPOINTS
+@app.route('/users/<int:user_id>/favorites', methods=['GET'])
+def get_favorites(user_id):
+    
+    favorites = Favorites.query.filter_by(user_id=user_id).all()
+    serialized_favorites = [favorite.serialize() for favorite in favorites]
+
+    return jsonify(serialized_favorites), 200
+
+@app.route('/favorites/user/<int:user_id>', methods=['POST'])
+def add_favorite(user_id):
+    body = request.get_json()
+    favorites = Favorites()
+    favorites.user_id = user_id
+    if 'character_id' in body:
+        favorites.character_id = body['character_id']
+    if 'planet_id' in body:    
+        favorites.planet_id = body['planet_id']
+    if 'vehicle_id' in body:
+        favorites.vehicle_id = body['vehicle_id']
+
+    db.session.add(favorites)
+    db.session.commit()
+
+    return jsonify("Favorites have been updated successfully"), 200
+
+@app.route('/favorites/users/<int:user_id>/planets/<int:planet_id>', methods=['DELETE'])
+def delete_favorite_planet(user_id, planet_id):
+    favorite_entry = Favorites.query.filter_by(user_id=user_id, planet_id=planet_id).first()
+    
+    if favorite_entry:
+        db.session.delete(favorite_entry)
+        db.session.commit()
+        return jsonify("Favorite planet deleted successfully"), 200
+    else:
+        return jsonify("Favorite planet not found"), 404
+    
+@app.route('/favorites/users/<int:user_id>/characters/<int:character_id>', methods=['DELETE'])
+def delete_favorite_character(user_id, character_id):
+    favorite_entry = Favorites.query.filter_by(user_id=user_id, character_id=character_id).first()
+    
+    if favorite_entry:
+        db.session.delete(favorite_entry)
+        db.session.commit()
+        return jsonify("Favorite character deleted successfully"), 200
+    else:
+        return jsonify("Favorite character not found"), 404
+
+@app.route('/favorites/users/<int:user_id>/vehicles/<int:vehicle_id>', methods=['DELETE'])
+def delete_favorite_vehicle(user_id, vehicle_id):
+    favorite_entry = Favorites.query.filter_by(user_id=user_id, vehicle_id=vehicle_id).first()
+    
+    if favorite_entry:
+        db.session.delete(favorite_entry)
+        db.session.commit()
+        return jsonify("Favorite vehicle deleted successfully"), 200
+    else:
+        return jsonify("Favorite vehicle not found"), 404
+
+# CHARACTERS ENDPOINTS
 @app.route('/characters', methods=['GET'])
 def get_characters():
     characters = Character.query.all()
@@ -51,6 +119,7 @@ def get_character(character_id):
         return jsonify(), 404
     return jsonify(character.serialize()), 200
 
+# PLANETS ENDPOINTS
 @app.route('/planets', methods=['GET'])
 def get_planets():
     planets = Planet.query.all()
@@ -66,6 +135,7 @@ def get_planet(planet_id):
         return jsonify(), 404
     return jsonify(planet.serialize()), 200
 
+# VEHICLES ENDPOINTS
 @app.route('/vehicles', methods=['GET'])
 def get_vehicles():
     vehicles = Vehicle.query.all()

@@ -8,7 +8,7 @@ class User(db.Model):
     password = db.Column(db.String(80), unique=False, nullable=False)
 
     def __repr__(self):
-        return '<User %r>' % self.email
+        return '<User %r>' % self.id
 
     def serialize(self):
         return {
@@ -110,5 +110,8 @@ class Favorites(db.Model):
 
     def serialize(self):
         return {
-            "id": self.id
+            "id": self.user_id,
+            "character_id": self.character_id,
+            "planet_id": self.planet_id,
+            "vehicle_id": self.vehicle_id
         }
