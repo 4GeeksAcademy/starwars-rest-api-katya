@@ -25,6 +25,7 @@ class Planet(db.Model):
     orbital_period = db.Column(db.Integer, nullable=False)
     rotation_period = db.Column(db.Integer, nullable=False)
     diameter = db.Column(db.Integer, nullable=False)
+    image_url = db.Column(db.String(500))
 
     def __repr__(self):
         return '<Planet %r>' % self.name
@@ -45,10 +46,11 @@ class Character(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), unique=True, nullable=False)
     gender = db.Column(db.Enum('female', 'male', 'other', 'n/a', name="gender_types"), nullable=False)
-    birth_year = db.Column(db.Integer, nullable=False)
+    birth_year = db.Column(db.String(50), nullable=False)
     height = db.Column(db.Integer, nullable=False)
     hair_color = db.Column(db.Enum('brown', 'blond', 'red', 'black', 'n/a', name="hair_color_types"), nullable=False)
     eye_color = db.Column(db.Enum('brown', 'green', 'blue', 'gold', 'n/a', name="eye_color_types"), nullable=False)
+    image_url = db.Column(db.String(500))
     planet_id = db.Column(db.Integer, db.ForeignKey('planet.id'))
     planet = db.relationship(Planet)
 
@@ -72,8 +74,9 @@ class Vehicle(db.Model):
     model = db.Column(db.String(100), nullable=False)
     vehicle_class = db.Column(db.Enum('repulsorcraft', 'wheeled', 'starfighter', name="vehicle_class_types"), nullable=False)
     manufacturer = db.Column(db.Enum('Incom Corporation', 'Corellia Mining Corporation', name="manufacturer_types"), nullable=False)
-    length = db.Column(db.Integer, nullable=False)
+    length = db.Column(db.String(10), nullable=False)
     passengers = db.Column(db.Integer, nullable=False)
+    image_url = db.Column(db.String(500))
     pilot_id = db.Column(db.Integer, db.ForeignKey('character.id'))
     character = db.relationship(Character)
 

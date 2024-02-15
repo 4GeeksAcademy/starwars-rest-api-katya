@@ -8,8 +8,8 @@ from flask_swagger import swagger
 from flask_cors import CORS
 from utils import APIException, generate_sitemap
 from admin import setup_admin
-from models import db, User
-#from models import Person
+from models import db, User, Planet, Character, Vehicle, Favorites
+
 
 app = Flask(__name__)
 app.url_map.strict_slashes = False
@@ -36,14 +36,50 @@ def handle_invalid_usage(error):
 def sitemap():
     return generate_sitemap(app)
 
-@app.route('/user', methods=['GET'])
-def handle_hello():
+@app.route('/characters', methods=['GET'])
+def get_characters():
+    characters = Character.query.all()
+    serialized_characters = [character.serialize() for character in characters]
 
-    response_body = {
-        "msg": "Hello, this is your GET /user response "
-    }
+    return jsonify(serialized_characters), 200
 
-    return jsonify(response_body), 200
+@app.route('/characters/<int:character_id>', methods=['GET'])
+def get_character(character_id):
+    character = Character.query.get(character_id)
+
+    if character is None:
+        return jsonify(), 404
+    return jsonify(character.serialize()), 200
+
+@app.route('/planets', methods=['GET'])
+def get_planets():
+    planets = Planet.query.all()
+    serialized_planets = [planet.serialize() for planet in planets]
+
+    return jsonify(serialized_planets), 200
+
+@app.route('/planets/<int:planet_id>', methods=['GET'])
+def get_planet(planet_id):
+    planet = Planet.query.get(planet_id)
+    
+    if planet is None:
+        return jsonify(), 404
+    return jsonify(planet.serialize()), 200
+
+@app.route('/vehicles', methods=['GET'])
+def get_vehicles():
+    vehicles = Vehicle.query.all()
+    serialized_vehicles = [vehicle.serialize() for vehicle in vehicles]
+
+    return jsonify(serialized_vehicles), 200
+
+@app.route('/vehicles/<int:vehicle_id>', methods=['GET'])
+def get_vehicle(vehicle_id):
+    vehicle = Vehicle.query.get(vehicle_id)
+    
+    if vehicle is None:
+        return jsonify(), 404
+    return jsonify(vehicle.serialize()), 200
 
 # this only runs if `$ python src/app.py` is executed
 if __name__ == '__main__':
