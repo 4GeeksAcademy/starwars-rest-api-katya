@@ -19,12 +19,13 @@ class User(db.Model):
 class Planet(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), unique=True, nullable=False)
-    terrain = db.Column(db.Enum('desert', 'grasslands, mountains', 'jungle, rainforests', 'tundra, ice caves, mountain ranges', 'swamp, jungles', name="terrain_types"), nullable=False)
+    terrain = db.Column(db.String(150), nullable=False)
     climate = db.Column(db.Enum('arid', 'temperate', 'tropical', 'frozen', 'murky', name='climate_types'), nullable=False)
-    population = db.Column(db.Integer, nullable=False)
+    population = db.Column(db.String(100), nullable=False)
     orbital_period = db.Column(db.Integer, nullable=False)
     rotation_period = db.Column(db.Integer, nullable=False)
     diameter = db.Column(db.Integer, nullable=False)
+    description = db.Column(db.String(1000), nullable=False)
     image_url = db.Column(db.String(500))
 
     def __repr__(self):
@@ -39,7 +40,9 @@ class Planet(db.Model):
             "population": self.population,
             "orbital_period": self.orbital_period,
             "rotation_period": self.rotation_period,
-            "diameter": self.diameter
+            "diameter": self.diameter,
+            "description": self.description,
+            "image_url": self.image_url
         }
 
 class Character(db.Model):
@@ -50,6 +53,7 @@ class Character(db.Model):
     height = db.Column(db.Integer, nullable=False)
     hair_color = db.Column(db.Enum('brown', 'blond', 'red', 'black', 'n/a', name="hair_color_types"), nullable=False)
     eye_color = db.Column(db.Enum('brown', 'green', 'blue', 'gold', 'n/a', name="eye_color_types"), nullable=False)
+    description = db.Column(db.String(1000), nullable=False)
     image_url = db.Column(db.String(500))
     planet_id = db.Column(db.Integer, db.ForeignKey('planet.id'))
     planet = db.relationship(Planet)
@@ -58,6 +62,7 @@ class Character(db.Model):
         return '<Character %r>' % self.name
 
     def serialize(self):
+        planet_name = self.planet.name if self.planet else None
         return {
             "id": self.id,
             "name": self.name,
@@ -65,7 +70,10 @@ class Character(db.Model):
             "birth_year": self.birth_year,
             "height": self.height,
             "hair_color": self.hair_color,
-            "eye_color": self.eye_color
+            "eye_color": self.eye_color,
+            "homeworld": planet_name,
+            "description": self.description,
+            "image_url": self.image_url
         }
 
 class Vehicle(db.Model):
@@ -76,6 +84,7 @@ class Vehicle(db.Model):
     manufacturer = db.Column(db.Enum('Incom Corporation', 'Corellia Mining Corporation', name="manufacturer_types"), nullable=False)
     length = db.Column(db.String(10), nullable=False)
     passengers = db.Column(db.Integer, nullable=False)
+    description = db.Column(db.String(1000), nullable=False)
     image_url = db.Column(db.String(500))
     pilot_id = db.Column(db.Integer, db.ForeignKey('character.id'))
     character = db.relationship(Character)
@@ -84,6 +93,7 @@ class Vehicle(db.Model):
         return '<Vehicle %r>' % self.name
 
     def serialize(self):
+        pilot_name = self.character.name if self.character else None
         return {
             "id": self.id,
             "name": self.name,
@@ -91,12 +101,15 @@ class Vehicle(db.Model):
             "vehicle_class": self.vehicle_class,
             "manufacturer": self.manufacturer,
             "length": self.length,
-            "passengers": self.passengers
+            "passengers": self.passengers,
+            "pilot_id": pilot_name,
+            "description": self.description,
+            "image_url": self.image_url
         }
     
 class Favorites(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     character_id = db.Column(db.Integer, db.ForeignKey('character.id'))
     planet_id = db.Column(db.Integer, db.ForeignKey('planet.id'))
     vehicle_id = db.Column(db.Integer, db.ForeignKey('vehicle.id'))
@@ -109,9 +122,11 @@ class Favorites(db.Model):
         return '<Favorites %r>' % self.user_id
 
     def serialize(self):
+        characters = [favorite.character.name for favorite in Favorites.query.filter(Favorites.character_id.isnot(None)).all()]
+        planets = [favorite.planet.name for favorite in Favorites.query.filter(Favorites.planet_id.isnot(None)).all()]
+        vehicles = [favorite.vehicle.name for favorite in Favorites.query.filter(Favorites.vehicle_id.isnot(None)).all()]
         return {
-            "id": self.user_id,
-            "character_id": self.character_id,
-            "planet_id": self.planet_id,
-            "vehicle_id": self.vehicle_id
+            "character_id": characters,
+            "planets": planets,
+            "vehicle_id": vehicles
         }
