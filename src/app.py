@@ -139,6 +139,38 @@ def add_character():
 
     return jsonify("Character created successfully", character.serialize()), 200
 
+@app.route('/characters/<int:character_id>', methods=['PUT'])
+def update_character(character_id):
+    body = request.get_json()
+    character = Character.query.filter_by(id=character_id).first()
+
+    if character:
+       character.name = body['name']
+       character.gender = body['gender']
+       character.birth_year = body['birth_year']
+       character.height = body['height']
+       character.hair_color = body['hair_color']
+       character.eye_color = body['eye_color']
+       character.planet_id = body['planet_id']
+
+    if 'image_url' in body:
+        character.image_url = body['image_url']
+
+    db.session.commit()
+
+    return jsonify("Character has been updated successfully", character.serialize()), 200
+
+@app.route('/characters/<int:character_id>', methods=['DELETE'])
+def delete_character(character_id):
+    character = Character.query.filter_by(id=character_id).first()
+    
+    if character:
+        db.session.delete(character)
+        db.session.commit()
+        return jsonify("Character deleted successfully"), 200
+    else:
+        return jsonify("Character not found"), 404
+
 # PLANETS ENDPOINTS
 @app.route('/planets', methods=['GET'])
 def get_planets():
