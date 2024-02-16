@@ -42,18 +42,33 @@ def get_users():
     users = User.query.all()
     serialized_users = [user.serialize() for user in users]
 
-    return jsonify(serialized_users), 200
+    if users is None:
+        return jsonify({'error':'No users found'}), 404
+    else:
+        return jsonify(serialized_users), 200
+
 
 # FAVORITES ENDPOINTS
 @app.route('/users/<int:user_id>/favorites', methods=['GET'])
 def get_favorites(user_id):
+    user = User.query.get(user_id)
+    if user is None:
+        return jsonify({'error':'User not found'}), 404
+    
     favorites = Favorites.query.filter_by(user_id=user_id).all()
     serialized_favorites = [favorite.serialize() for favorite in favorites]
 
-    return jsonify(serialized_favorites), 200
+    if favorites is None:
+        return jsonify({'error':'Favorites not found for this user'}), 404
+    else:
+        return jsonify(serialized_favorites), 200
 
 @app.route('/favorites/user/<int:user_id>', methods=['POST'])
 def add_favorite(user_id):
+    user = User.query.get(user_id)
+    if user is None:
+        return jsonify({'error':'User not found'}), 404
+    
     body = request.get_json()
     favorites = Favorites()
     favorites.user_id = user_id
@@ -67,40 +82,53 @@ def add_favorite(user_id):
     db.session.add(favorites)
     db.session.commit()
 
-    return jsonify("Favorites have been updated successfully"), 200
+    return jsonify({'msg':'Favorites have been updated successfully'}), 200
 
 @app.route('/favorites/users/<int:user_id>/planets/<int:planet_id>', methods=['DELETE'])
 def delete_favorite_planet(user_id, planet_id):
+    user = User.query.get(user_id)
+    if user is None:
+        return jsonify({'error':'User not found'}), 404
+
     favorite_entry = Favorites.query.filter_by(user_id=user_id, planet_id=planet_id).first()
     
     if favorite_entry:
         db.session.delete(favorite_entry)
         db.session.commit()
-        return jsonify("Favorite planet deleted successfully"), 200
+        return jsonify({'msg':'Favorite planet deleted successfully'}), 200
     else:
-        return jsonify("Favorite planet not found"), 404
+        return jsonify({'error':'Favorite planet not found'}), 404
     
 @app.route('/favorites/users/<int:user_id>/characters/<int:character_id>', methods=['DELETE'])
 def delete_favorite_character(user_id, character_id):
+    user = User.query.get(user_id)
+    if user is None:
+        return jsonify({'error':'User not found'}), 404
+    
     favorite_entry = Favorites.query.filter_by(user_id=user_id, character_id=character_id).first()
     
     if favorite_entry:
         db.session.delete(favorite_entry)
         db.session.commit()
-        return jsonify("Favorite character deleted successfully"), 200
+        return jsonify({'msg':'Favorite character deleted successfully'}), 200
     else:
-        return jsonify("Favorite character not found"), 404
+        return jsonify({'error':'Favorite character not found'}), 404
 
 @app.route('/favorites/users/<int:user_id>/vehicles/<int:vehicle_id>', methods=['DELETE'])
 def delete_favorite_vehicle(user_id, vehicle_id):
+    user = User.query.get(user_id)
+    if user is None:
+        return jsonify({'error':'User not found'}), 404
+    
     favorite_entry = Favorites.query.filter_by(user_id=user_id, vehicle_id=vehicle_id).first()
     
     if favorite_entry:
         db.session.delete(favorite_entry)
         db.session.commit()
-        return jsonify("Favorite vehicle deleted successfully"), 200
+        return jsonify({'msg':'Favorite vehicle deleted successfully'}), 200
     else:
-        return jsonify("Favorite vehicle not found"), 404
+        return jsonify({'error':'Favorite vehicle not found'}), 404
+
 
 # CHARACTERS ENDPOINTS
 @app.route('/characters', methods=['GET'])
@@ -108,15 +136,19 @@ def get_characters():
     characters = Character.query.all()
     serialized_characters = [character.serialize() for character in characters]
 
-    return jsonify(serialized_characters), 200
+    if characters is None:
+        return jsonify({'error':'No characters found'}), 404
+    else:
+        return jsonify(serialized_characters), 200
 
 @app.route('/characters/<int:character_id>', methods=['GET'])
 def get_character(character_id):
     character = Character.query.get(character_id)
 
     if character is None:
-        return jsonify(), 404
-    return jsonify(character.serialize()), 200
+        return jsonify({'error': 'Character not found'}), 404
+    else:
+        return jsonify(character.serialize()), 200
 
 @app.route('/characters', methods=['POST'])
 def add_character():
@@ -171,21 +203,80 @@ def delete_character(character_id):
     else:
         return jsonify("Character not found"), 404
 
+
 # PLANETS ENDPOINTS
 @app.route('/planets', methods=['GET'])
 def get_planets():
     planets = Planet.query.all()
     serialized_planets = [planet.serialize() for planet in planets]
 
-    return jsonify(serialized_planets), 200
+    if planets is None:
+        return jsonify({'error':'No planets found'}), 404
+    else:
+        return jsonify(serialized_planets), 200
 
 @app.route('/planets/<int:planet_id>', methods=['GET'])
 def get_planet(planet_id):
     planet = Planet.query.get(planet_id)
     
     if planet is None:
-        return jsonify(), 404
-    return jsonify(planet.serialize()), 200
+        return jsonify({'error':'Planet not found'}), 404
+    else:
+        return jsonify(planet.serialize()), 200
+    
+@app.route('/planets', methods=['POST'])
+def add_planet():
+    body = request.get_json()
+    planet = Planet()
+    planet.id = body['id']
+    planet.name = body['name']
+    planet.terrain = body['terrain']
+    planet.climate = body['climate']
+    planet.population = body['population']
+    planet.orbital_period = body['orbital_period']
+    planet.rotation_period = body['rotation_period']
+    planet.diameter = body['diameter']
+
+    if 'image_url' in body:
+        planet.image_url = body['image_url']
+
+    db.session.add(planet)
+    db.session.commit()
+
+    return jsonify("Planet created successfully", planet.serialize()), 200
+
+@app.route('/planets/<int:planet_id>', methods=['PUT'])
+def update_planet(planet_id):
+    body = request.get_json()
+    planet = Planet.query.filter_by(id=planet_id).first()
+
+    if planet:
+       planet.name = body['name']
+       planet.terrain = body['terrain']
+       planet.climate = body['climate']
+       planet.population = body['population']
+       planet.orbital_period = body['orbital_period']
+       planet.rotation_period = body['rotation_period']
+       planet.diameter = body['diameter']
+
+    if 'image_url' in body:
+        planet.image_url = body['image_url']
+
+    db.session.commit()
+
+    return jsonify("Planet has been updated successfully", planet.serialize()), 200
+
+@app.route('/planets/<int:planet_id>', methods=['DELETE'])
+def delete_planet(planet_id):
+    planet = Planet.query.filter_by(id=planet_id).first()
+    
+    if planet:
+        db.session.delete(planet)
+        db.session.commit()
+        return jsonify("Planet deleted successfully"), 200
+    else:
+        return jsonify("Planet not found"), 404
+
 
 # VEHICLES ENDPOINTS
 @app.route('/vehicles', methods=['GET'])
@@ -193,15 +284,77 @@ def get_vehicles():
     vehicles = Vehicle.query.all()
     serialized_vehicles = [vehicle.serialize() for vehicle in vehicles]
 
-    return jsonify(serialized_vehicles), 200
+    if vehicles is None:
+        return jsonify({'error':'No vehicles found'}), 404
+    else:
+        return jsonify(serialized_vehicles), 200
 
 @app.route('/vehicles/<int:vehicle_id>', methods=['GET'])
 def get_vehicle(vehicle_id):
     vehicle = Vehicle.query.get(vehicle_id)
     
     if vehicle is None:
-        return jsonify(), 404
-    return jsonify(vehicle.serialize()), 200
+        return jsonify({'error':'Vehicle not found'}), 404
+    else:
+        return jsonify(vehicle.serialize()), 200
+
+@app.route('/vehicles', methods=['POST'])
+def add_vehicle():
+    body = request.get_json()
+    vehicle = Vehicle()
+    vehicle.id = body['id']
+    vehicle.name = body['name']
+    vehicle.model = body['model']
+    vehicle.model = body['model']
+    vehicle.vehicle_class = body['vehicle_class']
+    vehicle.manufacturer = body['manufacturer']
+    vehicle.length = body['length']
+    vehicle.passengers = body['passengers']
+
+    if 'image_url' in body:
+        vehicle.image_url = body['image_url']
+    if 'pilot_id' in body:
+        vehicle.pilot_id = body['pilot_id']
+
+    db.session.add(vehicle)
+    db.session.commit()
+
+    return jsonify("Vehicle created successfully", vehicle.serialize()), 200
+
+@app.route('/vehicles/<int:vehicle_id>', methods=['PUT'])
+def update_vehicle(vehicle_id):
+    body = request.get_json()
+    vehicle = Vehicle.query.filter_by(id=vehicle_id).first()
+
+    if vehicle:
+       vehicle.id = body['id']
+       vehicle.name = body['name']
+       vehicle.model = body['model']
+       vehicle.model = body['model']
+       vehicle.vehicle_class = body['vehicle_class']
+       vehicle.manufacturer = body['manufacturer']
+       vehicle.length = body['length']
+       vehicle.passengers = body['passengers']
+
+    if 'image_url' in body:
+        vehicle.image_url = body['image_url']
+    if 'pilot_id' in body:
+        vehicle.pilot_id = body['pilot_id']
+
+    db.session.commit()
+
+    return jsonify("Vehicle has been updated successfully", vehicle.serialize()), 200
+
+@app.route('/vehicles/<int:vehicle_id>', methods=['DELETE'])
+def delete_vehicle(vehicle_id):
+    vehicle = Vehicle.query.filter_by(id=vehicle_id).first()
+    
+    if vehicle:
+        db.session.delete(vehicle)
+        db.session.commit()
+        return jsonify("Vehicle deleted successfully"), 200
+    else:
+        return jsonify("Vehicle not found"), 404
 
 # this only runs if `$ python src/app.py` is executed
 if __name__ == '__main__':
